@@ -1,51 +1,41 @@
 #pragma once
-#include <vector>
 #include <memory>
-#include <iostream>
-#include <stdexcept>
-#include "figure.hpp"
+#include <utility>
 
-template<typename T>
+template<class T>
 class Array {
 private:
-    std::vector<std::shared_ptr<Figure<T>>> arr;
-public:
-    Array() = default;
-    ~Array() = default;
-    Array(const Array&) = delete;
-    Array& operator=(const Array&) = delete;
+    std::unique_ptr<T[]> data; // Соответствует std::shared_ptr<T[]> по логике управления
+    size_t _size;
+    size_t _capacity;
 
-    void push_back(std::shared_ptr<Figure<T>> f){ arr.push_back(std::move(f)); }
-    bool empty() const { return arr.empty(); }
-    void remove(size_t idx){
-        if(idx >= arr.size()) throw std::out_of_range("Index out of range");
-        arr.erase(arr.begin() + idx);
-    }
-    std::shared_ptr<Figure<T>> operator[](size_t idx) const {
-        if(idx >= arr.size()) throw std::out_of_range("Index out of range");
-        return arr[idx];
-    }
-    size_t getSize() const { return arr.size(); }
-
-    double totalArea() const {
-        double s = 0.0;
-        for(const auto &p : arr) s += static_cast<double>(*p);
-        return s;
-    }
-
-    void printAll() const {
-        if(arr.empty()){ std::cout << "No figures\n"; return; }
-        for(size_t i=0;i<arr.size();++i){
-            std::cout << "\n=== Figure " << (i+1) << " (" << arr[i]->getName() << ") ===\n";
-            const auto &f = *arr[i];
-            for(size_t j=0;j<f.getPointCount();++j){
-                const auto &p = f.getPoint(j);
-                std::cout << "  (" << p.get_x() << ", " << p.get_y() << ")\n";
-            }
-            auto c = f.getCenter();
-            std::cout << "Center: (" << c.get_x() << ", " << c.get_y() << ")\n";
-            std::cout << "Area: " << static_cast<double>(f) << "\n";
+    void resize(size_t new_cap) {
+        auto new_data = std::make_unique<T[]>(new_cap);
+        for (size_t i = 0; i < _size; ++i) {
+            new_data[i] = std::move(data[i]); // СТРОГО move по заданию
         }
+        data = std::move(new_data);
+        _capacity = new_cap;
     }
-    void clear(){ arr.clear(); }
+
+public:
+    Array() : data(nullptr), _size(0), _capacity(0) {}
+
+    void push_back(T value) {
+        if (_size == _capacity) {
+            resize(_capacity == 0 ? 1 : _capacity * 2);
+        }
+        data[_size++] = std::move(value);
+    }
+
+    void remove(size_t idx) {
+        if (idx >= _size) return;
+        for (size_t i = idx; i < _size - 1; ++i) {
+            data[i] = std::move(data[i + 1]);
+        }
+        _size--;
+    }
+
+    T& operator[](size_t i) { return data[i]; }
+    size_t size() const { return _size; }
 };

@@ -1,42 +1,40 @@
 #include <iostream>
-#include <memory>
-#include "include/array.hpp"
-#include "include/trapezoid.hpp"
-#include "include/rectangle.hpp"
-#include "include/square.hpp"
+#include "array.hpp"
+#include "shapes.hpp"
 
-int main(){
-    using T = double;
-    Array<T> arr;
-    size_t N;
-    if(!(std::cin >> N)) return 0;
-    for(size_t i=0;i<N;++i){
-        char c; std::cin >> c;
-        if(c == 'T' || c == 't'){
-            auto fig = std::make_shared<Triangle<T>>();
-            std::cin >> *fig;
-            if(fig->isCorrect()) arr.push_back(fig);
-            else std::cerr << "Bad triangle\n";
-        } else if(c == 'R' || c == 'r'){
-            auto fig = std::make_shared<Rectangle<T>>();
-            std::cin >> *fig;
-            if(fig->isCorrect()) arr.push_back(fig);
-            else std::cerr << "Bad rect\n";
-        } else if(c == 'S' || c == 's'){
-            auto fig = std::make_shared<Square<T>>();
-            std::cin >> *fig;
-            if(fig->isCorrect()) arr.push_back(fig);
-            else std::cerr << "Bad square\n";
-        } else {
-            std::cerr << "Unknown type: " << c << "\n";
-            --i;
+int main() {
+    Array<std::shared_ptr<Figure<double>>> all_figures;
+
+    int cmd;
+    while (true) {
+        std::cout << "\n1. Add Square\n2. Add Rectangle\n3. Add Trapezoid\n4. Remove by index\n5. Print All\n0. Exit\n> ";
+        std::cin >> cmd;
+        if (cmd == 0) break;
+
+        if (cmd >= 1 && cmd <= 3) {
+            std::shared_ptr<Figure<double>> f;
+            if (cmd == 1) f = std::make_shared<Square<double>>();
+            else if (cmd == 2) f = std::make_shared<Rectangle<double>>();
+            else f = std::make_shared<Trapezoid<double>>();
+
+            std::cout << "Enter 4 pairs of coordinates (x y):\n";
+            for (int i = 0; i < 4; ++i) std::cin >> *(f->points[i]);
+            all_figures.push_back(std::move(f));
+        } 
+        else if (cmd == 4) {
+            size_t idx; std::cout << "Index: "; std::cin >> idx;
+            all_figures.remove(idx);
+        } 
+        else if (cmd == 5) {
+            double total = 0;
+            for (size_t i = 0; i < all_figures.size(); ++i) {
+                all_figures[i]->printInfo();
+                total += static_cast<double>(*(all_figures[i]));
+            }
+            std::cout << "\nTotal Area of all figures: " << total << "\n";
         }
     }
-    arr.printAll();
-    std::cout << "Total area = " << arr.totalArea() << "\n";
     return 0;
 }
-
 // S 0 0  2 0  2 2  0 2
 // R 0 0  3 0  3 1  0 1
-// T 0 0  4 0  0 3
